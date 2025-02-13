@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repaso para el Final</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: #f4f4f4;
+        }
+        #question {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        #answer {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        #questionListContainer {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px auto;
+            width: 80%;
+            background: white;
+            border-radius: 5px;
+        }
+        .question-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .delete-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 contenteditable="true" onblur="saveTitle()">Repaso para el Final</h1>
+    <div id="question">Cargando pregunta...</div>
+    <button onclick="nextQuestion()">Siguiente Pregunta</button>
+    <button onclick="markCorrect()">Respondida Correctamente</button>
+    <button onclick="showAnswer()">Mostrar Respuesta Correcta</button>
+    <div id="answer"></div>
+    
+    <h2>Estadísticas</h2>
+    <p>Respondidas sin ayuda: <span id="correctCount">0</span></p>
+    <p>Respondidas con ayuda: <span id="helpedCount">0</span></p>
+    <button onclick="resetStats()">Reiniciar Estadísticas</button>
+    
+    <h2>Agregar Nueva Pregunta</h2>
+    <input type="text" id="questionInput" placeholder="Escribe una nueva pregunta">
+    <input type="text" id="answerInput" placeholder="Escribe la respuesta correcta">
+    <button onclick="addNewQuestion()">Agregar Pregunta</button>
+    
+    <h2>Preguntas Guardadas</h2>
+    <div id="questionListContainer">
+        <div id="questionList"></div>
+    </div>
+    <button onclick="clearAllQuestions()">Borrar Todas las Preguntas</button>
+    
+    <script>
+        let questions = JSON.parse(localStorage.getItem("questions")) || [];
+        let correctCount = parseInt(localStorage.getItem("correctCount")) || 0;
+        let helpedCount = parseInt(localStorage.getItem("helpedCount")) || 0;
+        let currentQuestionIndex = null;
+
+        document.getElementById("correctCount").innerText = correctCount;
+        document.getElementById("helpedCount").innerText = helpedCount;
+        updateQuestionList();
+        nextQuestion();
+
+        function nextQuestion() {
+            if (questions.length === 0) {
+                document.getElementById("question").innerText = "No hay preguntas disponibles.";
+                return;
+            }
+            currentQuestionIndex = Math.floor(Math.random() * questions.length);
+            document.getElementById("question").innerText = questions[currentQuestionIndex].question;
+            document.getElementById("answer").style.display = "none";
+        }
+
+        function showAnswer() {
+            if (currentQuestionIndex !== null) {
+                document.getElementById("answer").innerText = questions[currentQuestionIndex].answer;
+                document.getElementById("answer").style.display = "block";
+                helpedCount++;
+                localStorage.setItem("helpedCount", helpedCount);
+                document.getElementById("helpedCount").innerText = helpedCount;
+            }
+        }
+
+        function markCorrect() {
+            if (currentQuestionIndex !== null) {
+                correctCount++;
+                localStorage.setItem("correctCount", correctCount);
+                document.getElementById("correctCount").innerText = correctCount;
+                nextQuestion();
+            }
+        }
+
+        function resetStats() {
+            correctCount = 0;
+            helpedCount = 0;
+            localStorage.setItem("correctCount", correctCount);
+            localStorage.setItem("helpedCount", helpedCount);
+            document.getElementById("correctCount").innerText = correctCount;
+            document.getElementById("helpedCount").innerText = helpedCount;
+        }
+
+        function addNewQuestion() {
+            const questionInput = document.getElementById("questionInput").value;
+            const answerInput = document.getElementById("answerInput").value;
+            if (questionInput.trim() !== "" && answerInput.trim() !== "") {
+                questions.push({ question: questionInput, answer: answerInput });
+                saveQuestions();
+                document.getElementById("questionInput").value = "";
+                document.getElementById("answerInput").value = "";
+                updateQuestionList();
+            }
+        }
+
+        function updateQuestionList() {
+            let list = document.getElementById("questionList");
+            list.innerHTML = "";
+            questions.forEach((q, index) => {
+                let item = document.createElement("div");
+                item.className = "question-item";
+                item.innerHTML = `${q.question} <button class='delete-btn' onclick='deleteQuestion(${index})'>X</button>`;
+                list.appendChild(item);
+            });
+        }
+
+        function deleteQuestion(index) {
+            questions.splice(index, 1);
+            saveQuestions();
+            updateQuestionList();
+        }
+
+        function clearAllQuestions() {
+            questions = [];
+            saveQuestions();
+            updateQuestionList();
+        }
+
+        function saveQuestions() {
+            localStorage.setItem("questions", JSON.stringify(questions));
+        }
+    </script>
+</body>
+</html>
